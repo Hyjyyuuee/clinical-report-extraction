@@ -1,0 +1,153 @@
+# Corrections applied to test.draft.jsonl to produce test.jsonl.
+# Format: <report id>: <op>; <op>; ...  # reason
+#   -finding/status                    remove that finding
+#   +finding/status/side/evidence      add a finding (side: left|right|bilateral|-)
+#   ~finding/status>key=value,...      change fields of an existing finding
+# Reports not listed were checked and kept as drafted.
+
+533: +opacity/absent/-/without focal opacification  # named and negated
+124: -atelectasis/present; -cardiomegaly/uncertain  # atelectasis was inferred, not named; heart size "limited assessment" is not a finding
+400: ~nodule/present>finding=granuloma  # calcified granuloma
+3700: ~consolidation/absent>finding=opacity  # "airspace disease" maps to opacity
+3518: +opacity/absent/-/without focal airspace opacity  # named and negated
+2777: ~atelectasis/present>status=uncertain  # "scarring or atelectasis"
+85: +granuloma/present/-/scattered calcified granulomas  # missed
+2822: ~nodule/present>finding=granuloma  # calcified granuloma
+3844: ~cardiomegaly/uncertain>status=absent  # upper limits of normal = not enlarged
+905: +opacity/absent/-/No airspace disease  # missed
+600: +granuloma/present/left/Calcified left hilar lymph XXXX/granulomas  # missed
+680: ~nodule/present>finding=granuloma  # calcified granuloma
+2409: ~cardiomegaly/uncertain>status=absent; +granuloma/present/-/Calcified granulomas are also identified  # upper limits normal; missed granulomas
+3448: -emphysema/present; ~nodule/present>finding=granuloma  # hyperexpansion is not emphysema unless named; old granulomatous disease
+1572: +granuloma/present/left/calcified granuloma within the left upper lobe  # missed
+2520: ~infiltrate/absent>finding=opacity; ~nodule/present>finding=granuloma  # "airspace disease" maps to opacity; calcified granuloma
+1342: -emphysema/uncertain  # emphysema not named
+67: -atelectasis/present  # low volumes with crowding is not atelectasis
+2874: ~other/present>finding=granuloma; +cardiomegaly/absent/-/Heart and pulmonary XXXX appear normal  # calcified granuloma; missed normal heart
+2723: -edema/absent; +opacity/absent/-/negative for focal confluent airspace disease  # vascular congestion is not edema; missed opacity
+822: ~atelectasis/present>status=uncertain  # "atelectasis or scarring"
+137: ~infiltrate/absent>finding=opacity  # "airspace disease" maps to opacity
+1634: +granuloma/present/-/Calcified granulomas  # missed
+24: +opacity/absent/-/clear of airspace disease  # missed
+1847: +granuloma/present/right/large calcified mediastinal and right hilar granulomas  # missed
+3003: ~other/present>finding=granuloma  # calcified granulomas
+3737: +opacity/absent/-/No focal airspace disease  # missed
+2393: -emphysema/present  # hyperexpansion is not emphysema unless named
+1559: -atelectasis/present; -cardiomegaly/absent  # volume loss is not atelectasis; "stable" silhouette does not state normal size
+1765: ~nodule/present>finding=granuloma; +opacity/absent/-/without evidence of focal opacification  # granuloma; missed opacity
+578: ~other/present>finding=granuloma  # prior granulomatous disease
+1524: +granuloma/present/-/residual to prior granulomatous infection  # missed
+2132: ~nodule/present>finding=granuloma  # granuloma
+2742: +granuloma/present/-/Prior granulomatous disease  # missed
+2286: +opacity/absent/-/No focal airspace opacities  # missed
+570: +opacity/absent/-/No focal airspace disease  # missed
+2577: -infiltrate/uncertain  # already captured by opacity present + atelectasis uncertain
+1393: ~consolidation/absent>finding=opacity  # "airspace disease" maps to opacity
+2554: -emphysema/present  # hyperexpansion is not emphysema unless named
+1232: ~consolidation/absent>finding=opacity; ~nodule/present>finding=granuloma  # airspace disease; granulomas
+2987: -emphysema/present; ~opacity/uncertain>status=present  # hyperinflation is not emphysema; the opacity itself is stated, only its cause is hedged
+859: ~atelectasis/present>status=uncertain  # "XXXX represents combination of soft tissue overlay and minimal atelectasis" is hedged
+1378: ~pleural_effusion/absent>laterality=-; ~pneumothorax/absent>laterality=-  # side not stated for these findings
+3470: +opacity/absent/-/No focal airspace opacities  # missed
+2484: ~nodule/present>finding=granuloma,status=uncertain  # "XXXX calcified granulomas", impression says "Probable"
+787: +cardiomegaly/absent/-/Heart size normal  # missed
+3717: -atelectasis/present  # low lung volumes is not atelectasis
+1911: +opacity/absent/-/No focal air space opacities  # missed
+2992: ~nodule/present>finding=granuloma  # calcified granuloma
+2836: ~atelectasis/present>laterality=-  # "basilar" does not state a side
+752: +granuloma/present/-/Scattered calcified granulomas; +cardiomegaly/absent/-/The heart and pulmonary XXXX are normal  # missed
+2633: +granuloma/present/-/Prior calcified granulomatous disease  # missed
+666: ~atelectasis/present>status=uncertain  # "scarring and/or subsegmental atelectasis"
+3727: -atelectasis/present; +cardiomegaly/absent/-/Heart and pulmonary XXXX normal  # low volumes is not atelectasis; missed normal heart
+1776: -cardiomegaly/absent  # "stable" does not state normal size
+2487: ~infiltrate/absent>finding=opacity  # "airspace disease" maps to opacity
+1649: +opacity/present/bilateral/bibasilar airspace disease  # missed
+3732: ~infiltrate/absent>laterality=-; ~pleural_effusion/absent>laterality=-; ~pneumothorax/absent>laterality=-  # side not stated for these findings
+103: +opacity/absent/-/without evidence of focal airspace disease  # missed
+1087: ~nodule/present>finding=granuloma  # calcified granuloma
+3353: -edema/present; +opacity/absent/-/No focal airspace disease  # vascular congestion is not edema; missed opacity
+2138: +granuloma/present/-/Prior granulomatous disease; -opacity/uncertain  # missed; the opacity is rib callus (bone)
+908: +cardiomegaly/absent/-/The heart pulmonary XXXX appear normal  # missed
+3611: ~consolidation/uncertain>finding=opacity,status=present; -emphysema/present  # the opacity is stated, its cause is hedged; "chronic lung disease" is not emphysema
+1333: +opacity/absent/-/clear of air space disease  # missed
+1741: ~other/present>finding=opacity  # "right basilar airspace disease" maps to opacity
+2644: ~nodule/present>laterality=left  # lingula is in the left lung
+2656: +granuloma/present/-/residuals of prior granulomatous infection  # missed
+900: -opacity/uncertain  # obscured cardiac margin is not a named opacity
+2646: ~consolidation/absent>finding=opacity; -infiltrate/absent  # "airspace disease" maps to opacity
+1130: ~nodule/present>finding=granuloma  # calcified granuloma
+5: -emphysema/present  # hyperexpansion is not emphysema unless named
+1050: -atelectasis/present  # decreased volumes with crowding is not atelectasis
+3023: ~nodule/present>finding=granuloma  # calcified granuloma
+1196: ~other/present>finding=opacity  # "airspace disease" maps to opacity
+333: -emphysema/uncertain; +cardiomegaly/absent/-/Heart size and pulmonary vascularity within normal limits  # hyperexpansion is not emphysema; missed normal heart
+1017: ~atelectasis/present>laterality=left  # lingula is in the left lung
+1945: ~atelectasis/present>status=uncertain  # "XXXX due ... in part to atelectasis" is hedged
+2380: ~consolidation/absent>finding=opacity  # "airspace disease" maps to opacity
+2084: +cardiomegaly/absent/-/Normal cardiac contours  # missed
+145: ~other/present>finding=opacity  # "airspace disease" maps to opacity
+2033: ~cardiomegaly/uncertain>status=absent; +opacity/absent/-/clear of focal airspace disease  # upper limits of normal = not enlarged; missed
+2929: ~cardiomegaly/uncertain>status=absent  # top normal = not enlarged
+3164: ~cardiomegaly/uncertain>status=absent  # upper limits of normal = not enlarged
+1056: +granuloma/present/-/Prior granulomatous disease  # missed
+2826: +cardiomegaly/absent/-/Heart and pulmonary XXXX are normal  # missed
+3918: -emphysema/uncertain  # hyperinflation / air trapping is not emphysema unless named
+3337: +cardiomegaly/absent/-/Heart size normal  # missed
+245: +opacity/present/left/left upper lobe airspace disease  # missed
+1131: ~nodule/present>finding=granuloma  # calcified granuloma
+697: ~consolidation/uncertain>finding=opacity,status=present  # impression states "Left basilar airspace disease" without hedging
+3662: ~nodule/present>finding=granuloma  # calcified granuloma
+326: +cardiomegaly/absent/-/Heart size and mediastinal contours are normal  # missed
+3798: -consolidation/present  # "airspace disease" maps to opacity, already labelled
+2302: +opacity/absent/-/without evidence of focal airspace disease  # missed
+604: +opacity/absent/-/free of focal airspace disease  # missed
+545: +cardiomegaly/absent/-/Heart and pulmonary XXXX are normal  # missed
+3368: -atelectasis/present  # low volumes with crowding is not atelectasis
+2077: ~atelectasis/present>status=uncertain,laterality=left  # "scar/subsegmental atelectasis in the lingula"
+2272: ~cardiomegaly/uncertain>status=absent; +granuloma/present/-/A few calcified granulomata are noted  # upper limits of normal; missed
+2287: -atelectasis/present  # low volumes is not atelectasis
+194: ~cardiomegaly/uncertain>status=absent; ~other/present>finding=opacity  # upper limits of normal; airspace disease maps to opacity
+2220: -atelectasis/present; -edema/present; -edema/uncertain  # low volumes is not atelectasis; congestion / heart failure do not name edema
+2149: ~nodule/present>finding=granuloma  # calcified granuloma
+2047: ~nodule/present>finding=granuloma  # calcified granuloma
+2093: +infiltrate/absent/-/No focal lung infiltrates  # missed
+3507: +cardiomegaly/absent/-/Cardiac and mediastinal XXXX appear normal  # missed
+
+# Consistency pass: normal heart / cardiomediastinal wording was labelled in most reports, so label it everywhere.
+400: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+2998: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+3874: +cardiomegaly/absent/-/heart and mediastinum are unremarkable
+1896: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+2253: +cardiomegaly/absent/-/heart and mediastinum are normal
+2446: +cardiomegaly/absent/-/heart and mediastinum otherwise normal
+577: +cardiomegaly/absent/-/cardiomediastinal contours are within normal limits
+3156: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+132: +cardiomegaly/absent/-/Cardiomediastinal silhouette is unremarkable
+2985: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+3589: +cardiomegaly/absent/-/Cardiomediastinal contour and pulmonary vascularity stable and within normal limits
+1578: +cardiomegaly/absent/-/Cardiac and mediastinal XXXX appear normal
+875: +cardiomegaly/absent/-/Heart and mediastinum normal
+2645: +cardiomegaly/absent/-/Cardiomediastinal silhouette is within normal limits
+3079: +cardiomegaly/absent/-/cardiomediastinal contours are within normal limits
+3693: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+1587: +cardiomegaly/absent/-/cardiomediastinal silhouette is within limits
+720: +cardiomegaly/absent/-/cardiac silhouette, upper mediastinum and pulmonary vasculature are within normal limits
+987: +cardiomegaly/absent/-/Heart and mediastinum normal
+3732: +cardiomegaly/absent/-/Cardiomediastinal silhouette is within normal limits
+5: +cardiomegaly/absent/-/cardiomediastinal silhouette and pulmonary vasculature are within normal limits
+255: +cardiomegaly/absent/-/Heart and mediastinal contours are normal
+1901: +cardiomegaly/absent/-/cardiomediastinal contours are within normal limits
+1528: +cardiomegaly/absent/-/cardiomediastinal silhouette and vasculature are within normal limits
+2771: +cardiomegaly/absent/-/Heart and mediastinum normal
+3025: +cardiomegaly/absent/-/Cardio mediastinal silhouette is unremarkable
+3031: +cardiomegaly/absent/-/cardiomediastinal silhouette is within normal limits
+3603: +cardiomegaly/absent/-/Cardiac and mediastinal contours are within normal limits
+3368: +cardiomegaly/absent/-/cardiomediastinal silhouette is normal
+2002: +cardiomegaly/absent/-/cardiomediastinal silhouette is within normal limits
+1398: +cardiomegaly/absent/-/Cardiomediastinal silhouette is unremarkable
+2093: +cardiomegaly/absent/-/cardiomediastinal silhouette is within normal limits
+2393: +opacity/absent/-/without focal air space disease  # missed
+
+# Consistency pass 2: broader normal-heart wording; negated airspace opacity.
+3947: +cardiomegaly/absent/-/heart and pulmonary XXXX appear normal
+264: +cardiomegaly/absent/-/Heart XXXX, mediastinum, XXXX, bony structures and lung XXXX are unremarkable

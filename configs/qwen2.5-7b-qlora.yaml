@@ -1,0 +1,20 @@
+# Run on a 16 GB+ GPU (Kaggle P100/T4 or a rented 4090).
+model: Qwen/Qwen2.5-7B-Instruct
+run_name: qwen2.5-7b-qlora-r16
+train_file: data/sft/train.jsonl
+dev_file: data/sft/dev.jsonl
+output_dir: outputs/qwen2.5-7b-qlora
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+epochs: 3
+batch_size: 2
+grad_accum: 8
+learning_rate: 1.0e-4
+max_length: 1024
+seed: 42
+report_to: wandb

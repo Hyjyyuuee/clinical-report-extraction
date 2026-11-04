@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report Label Review</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1f2328; --muted: #6a737d; --border: #d8dadd;
+    --accent: #2f6fdb; --present: #c2410c; --present-bg: #ffedd5; --absent: #15803d; --absent-bg: #dcfce7;
+    --uncertain: #a16207; --uncertain-bg: #fef9c3; --hover: #eef2f8; --danger: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c; --panel: #1f2227; --text: #e6e8eb; --muted: #9aa3ad; --border: #343a42;
+      --accent: #6ea1ff; --present: #fdba74; --present-bg: #4a2a12; --absent: #86efac; --absent-bg: #133a24;
+      --uncertain: #fde047; --uncertain-bg: #3d3510; --hover: #2a2f37; --danger: #f97066;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; }
+  select, input, button { font: inherit; color: inherit; }
+  select, input { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+  button { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover { background: var(--hover); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--danger); border-color: transparent; background: transparent; }
+  .progress { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+  .bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .layout { display: grid; grid-template-columns: 200px 1fr; height: calc(100vh - 53px); }
+  nav { overflow-y: auto; border-right: 1px solid var(--border); background: var(--panel); }
+  nav a { display: flex; justify-content: space-between; padding: 5px 12px; color: var(--text); text-decoration: none; font-variant-numeric: tabular-nums; }
+  nav a:hover { background: var(--hover); }
+  nav a.active { background: var(--hover); font-weight: 600; box-shadow: inset 3px 0 var(--accent); }
+  nav a .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); align-self: center; }
+  nav a.done .dot { background: var(--absent); }
+  main { overflow-y: auto; padding: 16px 20px 40px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+  .meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+  .report { white-space: pre-wrap; font-size: 15px; line-height: 1.7; }
+  mark { border-radius: 3px; padding: 0 1px; color: inherit; }
+  mark.present { background: var(--present-bg); box-shadow: inset 0 -2px var(--present); }
+  mark.absent { background: var(--absent-bg); box-shadow: inset 0 -2px var(--absent); }
+  mark.uncertain { background: var(--uncertain-bg); box-shadow: inset 0 -2px var(--uncertain); }
+  mark.focus { outline: 2px solid var(--accent); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  td { padding: 4px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td input, td select { width: 100%; }
+  tr.miss td:last-of-type input { border-color: var(--danger); }
+  select.status-present { color: var(--present); font-weight: 600; }
+  select.status-absent { color: var(--absent); font-weight: 600; }
+  select.status-uncertain { color: var(--uncertain); font-weight: 600; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .hint { color: var(--muted); font-size: 12px; }
+  .badge { font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--border); }
+  .badge.done { color: var(--absent); border-color: var(--absent); }
+  .badge.dirty { color: var(--uncertain); border-color: var(--uncertain); }
+  .toast { position: fixed; bottom: 16px; right: 16px; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; }
+  .toast.show { opacity: .92; }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; height: auto; }
+    nav { display: none; }
+    main { padding: 12px 16px; }
+    table, tbody, tr, td { display: block; }
+    thead { display: none; }
+    tr { border-bottom: 1px solid var(--border); padding: 6px 0; }
+    td { border: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Report Label Review</h1>
+  <select id="split" title="Split"></select>
+  <select id="filter" title="Filter">
+    <option value="all">All reports</option>
+    <option value="todo">Not reviewed</option>
+    <option value="uncertain">Has uncertain</option>
+    <option value="present">Has present</option>
+  </select>
+  <button id="prev" title="Previous (Alt+←)">←</button>
+  <button id="next" title="Next (Alt+→)">→</button>
+  <div class="progress"><div class="bar"><div id="bar"></div></div><span id="count"></span></div>
+</header>
+<div class="layout">
+  <nav id="list"></nav>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+let schema, items = [], visible = [], index = 0, edited = null, dirty = false;
+
+const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const current = () => visible[index];
+
+function toast(text) {
+  const el = $("toast");
+  el.textContent = text;
+  el.classList.add("show");
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove("show"), 1400);
+}
+
+async function init() {
+  schema = await (await fetch("/api/schema")).json();
+  $("split").innerHTML = schema.splits.map((s) => `<option>${s}</option>`).join("");
+  try { $("split").value = localStorage.getItem("split") || "test"; } catch {}
+  await loadSplit();
+}
+
+async function loadSplit() {
+  items = await (await fetch(`/api/items?split=${$("split").value}`)).json();
+  applyFilter(true);
+}
+
+function applyFilter(jumpToTodo) {
+  const f = $("filter").value;
+  const has = (item, status) => item.label.findings.some((x) => x.status === status);
+  visible = items.filter((it) =>
+    f === "all" || (f === "todo" && !it.reviewed) || (f !== "todo" && has(it, f)));
+  index = jumpToTodo ? Math.max(0, visible.findIndex((it) => !it.reviewed)) : 0;
+  open(index, true);
+}
+
+function confirmLeave() {
+  return !dirty || confirm("You have unsaved changes on this report. Discard them?");
+}
+
+function open(i, force) {
+  if (!force && !confirmLeave()) return;
+  index = Math.min(Math.max(i, 0), Math.max(visible.length - 1, 0));
+  edited = current() ? clone(current().label) : null;
+  dirty = false;
+  render();
+}
+
+function renderList() {
+  $("list").innerHTML = visible.map((it, i) =>
+    `<a href="#" data-i="${i}" class="${i === index ? "active" : ""} ${it.reviewed ? "done" : ""}">
+       <span>#${escapeHtml(it.id)}</span><span class="dot"></span></a>`).join("");
+  $("list").querySelector(".active")?.scrollIntoView({ block: "nearest" });
+  const done = items.filter((it) => it.reviewed).length;
+  $("bar").style.width = `${items.length ? (100 * done / items.length) : 0}%`;
+  $("count").textContent = `${done} / ${items.length} reviewed`;
+}
+
+function highlight(report, findings, focus) {
+  // Mark every evidence span; longer spans first so short ones don't split them.
+  const spans = [];
+  findings.forEach((f, i) => {
+    if (!f.evidence) return;
+    const at = report.toLowerCase().indexOf(f.evidence.toLowerCase());
+    if (at >= 0) spans.push({ start: at, end: at + f.evidence.length, status: f.status, i });
+  });
+  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+  let html = "", pos = 0;
+  for (const s of spans) {
+    if (s.start < pos) continue;
+    html += escapeHtml(report.slice(pos, s.start));
+    html += `<mark class="${s.status} ${s.i === focus ? "focus" : ""}">${escapeHtml(report.slice(s.start, s.end))}</mark>`;
+    pos = s.end;
+  }
+  return html + escapeHtml(report.slice(pos));
+}
+
+function options(values, selected, allowEmpty) {
+  return (allowEmpty ? [`<option value="">—</option>`] : []).concat(values.map((v) =>
+    `<option ${v === selected ? "selected" : ""}>${v}</option>`)).join("");
+}
+
+function render(focus) {
+  renderList();
+  const item = current();
+  if (!item) { $("main").innerHTML = `<div class="card">No reports match this filter.</div>`; return; }
+  const report = item.report;
+  const rows = edited.findings.map((f, i) => {
+    const found = !f.evidence || report.toLowerCase().includes(f.evidence.toLowerCase());
+    return `<tr data-i="${i}" class="${found ? "" : "miss"}">
+      <td><select data-k="finding">${options(schema.finding, f.finding)}</select></td>
+      <td><select data-k="status" class="status-${f.status}">${options(schema.status, f.status)}</select></td>
+      <td><select data-k="laterality">${options(schema.laterality, f.laterality, true)}</select></td>
+      <td><input data-k="location" value="${escapeHtml(f.location || "")}" placeholder="—"></td>
+      <td><input data-k="evidence" value="${escapeHtml(f.evidence || "")}" title="${found ? "" : "Not found in report text"}"></td>
+      <td><button class="danger" data-del="${i}" title="Delete">✕</button></td></tr>`;
+  }).join("");
+  $("main").innerHTML = `
+    <div class="card">
+      <div class="meta">
+        <span>Report #${escapeHtml(item.id)} · ${index + 1} of ${visible.length}</span>
+        <span>${dirty ? '<span class="badge dirty">unsaved</span>' : item.reviewed ? '<span class="badge done">reviewed</span>' : '<span class="badge">draft</span>'}</span>
+      </div>
+      <div class="report" id="report">${highlight(report, edited.findings, focus)}</div>
+      <div class="actions"><button id="fromSel">+ Add finding from selected text</button>
+        <span class="hint">Select words in the report above, then click.</span></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th style="width:17%">Finding</th><th style="width:13%">Status</th><th style="width:12%">Side</th>
+          <th style="width:18%">Location</th><th>Evidence</th><th style="width:36px"></th></tr></thead>
+        <tbody id="rows">${rows}</tbody>
+      </table>
+      <div class="actions">
+        <button id="add">+ Add finding</button>
+        <button id="reset">Reset</button>
+        <span style="flex:1"></span>
+        <span class="hint">Ctrl+Enter save &amp; next · Alt+←/→ move</span>
+        <button class="primary" id="save">Save &amp; next</button>
+      </div>
+    </div>`;
+}
+
+function markDirty() {
+  if (!dirty) { dirty = true; render(); }
+}
+
+function addFinding(evidence) {
+  edited.findings.push({ finding: "opacity", status: "present", laterality: null, location: null, evidence: evidence || "" });
+  dirty = true;
+  render();
+  $("rows").lastElementChild?.querySelector("select")?.focus();
+}
+
+async function save() {
+  const item = current();
+  if (!item) return;
+  const label = { findings: edited.findings.map((f) => ({
+    ...f, laterality: f.laterality || null, location: f.location?.trim() || null, evidence: f.evidence.trim(),
+  })) };
+  const response = await fetch(`/api/save?split=${$("split").value}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, label }),
+  });
+  if (!response.ok) { toast("Save failed: " + JSON.stringify((await response.json()).error).slice(0, 120)); return; }
+  item.label = label;
+  item.reviewed = true;
+  dirty = false;
+  toast(`Saved #${item.id}`);
+  const nextTodo = visible.findIndex((it, i) => i > index && !it.reviewed);
+  open(nextTodo >= 0 ? nextTodo : index + 1, true);
+}
+
+$("main").addEventListener("change", (e) => {
+  const row = e.target.closest("tr[data-i]");
+  // Text inputs are handled on "input"; re-rendering on their blur would swallow a click on Save.
+  if (!row || e.target.tagName === "INPUT") return;
+  edited.findings[+row.dataset.i][e.target.dataset.k] = e.target.value || null;
+  dirty = true;
+  render();
+});
+$("main").addEventListener("input", (e) => {
+  const row = e.target.closest("tr[data-i]");
+  if (!row || e.target.tagName !== "INPUT") return;
+  edited.findings[+row.dataset.i][e.target.dataset.k] = e.target.value;
+  if (!dirty) { dirty = true; document.querySelector(".meta span:last-child").innerHTML = '<span class="badge dirty">unsaved</span>'; }
+  $("report").innerHTML = highlight(current().report, edited.findings, +row.dataset.i);
+});
+$("main").addEventListener("mouseover", (e) => {
+  const row = e.target.closest("tr[data-i]");
+  if (row && $("report")) $("report").innerHTML = highlight(current().report, edited.findings, +row.dataset.i);
+});
+$("main").addEventListener("click", (e) => {
+  if (e.target.dataset.del !== undefined) { edited.findings.splice(+e.target.dataset.del, 1); dirty = true; render(); }
+  else if (e.target.id === "add") addFinding("");
+  else if (e.target.id === "fromSel") {
+    const text = window.getSelection().toString().trim();
+    text ? addFinding(text) : toast("Select some report text first");
+  }
+  else if (e.target.id === "reset") { edited = clone(current().label); dirty = false; render(); }
+  else if (e.target.id === "save") save();
+});
+$("list").addEventListener("click", (e) => {
+  const a = e.target.closest("a[data-i]");
+  if (a) { e.preventDefault(); open(+a.dataset.i); }
+});
+$("prev").onclick = () => open(index - 1);
+$("next").onclick = () => open(index + 1);
+$("filter").onchange = () => { if (confirmLeave()) applyFilter(false); };
+$("split").onchange = () => {
+  if (!confirmLeave()) return;
+  try { localStorage.setItem("split", $("split").value); } catch {}
+  loadSplit();
+};
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); save(); }
+  else if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); open(index - 1); }
+  else if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); open(index + 1); }
+});
+window.addEventListener("beforeunload", (e) => { if (dirty) e.preventDefault(); });
+init();
+</script>
+</body>
+</html>

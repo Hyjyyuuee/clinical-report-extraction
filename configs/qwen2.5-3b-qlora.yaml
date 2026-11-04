@@ -1,0 +1,20 @@
+# Sized for an 8 GB laptop GPU (RTX 5060). For 7B, use a 16 GB+ cloud GPU.
+model: Qwen/Qwen2.5-3B-Instruct
+run_name: qwen2.5-3b-qlora-r16
+train_file: data/sft/train.jsonl
+dev_file: data/sft/dev.jsonl
+output_dir: outputs/qwen2.5-3b-qlora
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+epochs: 3
+batch_size: 1
+grad_accum: 16
+learning_rate: 2.0e-4
+max_length: 1024
+seed: 42
+report_to: wandb
