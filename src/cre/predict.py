@@ -34,7 +34,8 @@ def api_generator(model: str):
     return generate
 
 
-def local_generator(model_name: str, adapter: str | None, load_in_4bit: bool):
+def local_generator(model_name: str, adapter: str | None, load_in_4bit: bool,
+                    constrained: bool = False):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
@@ -51,12 +52,35 @@ def local_generator(model_name: str, adapter: str | None, load_in_4bit: bool):
         model = PeftModel.from_pretrained(model, adapter)
     model.eval()
 
+    new_constraint = None
+    if constrained:
+        import sys
+
+        import transformers.tokenization_utils_base as tokenization_base
+
+        # lm-format-enforcer 0.11 imports PreTrainedTokenizerBase from a module path that
+        # transformers 5 removed; alias it before importing the integration.
+        sys.modules.setdefault("transformers.tokenization_utils", tokenization_base)
+        from lmformatenforcer import JsonSchemaParser
+        from lmformatenforcer.integrations.transformers import (
+            build_token_enforcer_tokenizer_data, build_transformers_prefix_allowed_tokens_fn,
+        )
+
+        from .schema import json_schema
+
+        tokenizer_data = build_token_enforcer_tokenizer_data(tokenizer)
+        schema = json_schema()
+
+        def new_constraint():  # fresh parser state per report
+            return build_transformers_prefix_allowed_tokens_fn(tokenizer_data, JsonSchemaParser(schema))
+
     def generate(messages: list[dict]) -> str:
         inputs = tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, return_tensors="pt", return_dict=True,
         ).to(model.device)
+        extra = {"prefix_allowed_tokens_fn": new_constraint()} if new_constraint else {}
         with torch.no_grad():
-            output = model.generate(**inputs, max_new_tokens=768, do_sample=False)
+            output = model.generate(**inputs, max_new_tokens=768, do_sample=False, **extra)
         return tokenizer.decode(output[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
 
     return generate
@@ -70,6 +94,10 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--adapter")
     parser.add_argument("--few-shot", action="store_true")
+    parser.add_argument("--schema-prompt", action="store_true",
+                        help="append the explicit JSON format to the system prompt (opt-in)")
+    parser.add_argument("--constrained", action="store_true",
+                        help="local only: JSON-schema constrained decoding (lm-format-enforcer)")
     parser.add_argument("--no-4bit", action="store_true")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--workers", type=int, default=8)
@@ -82,11 +110,15 @@ def main() -> None:
     if args.backend == "api":
         generate = api_generator(args.model)
     else:
-        generate = local_generator(args.model, args.adapter, not args.no_4bit)
+        generate = local_generator(args.model, args.adapter, not args.no_4bit, args.constrained)
+    if args.constrained and args.backend != "local":
+        parser.error("--constrained needs --backend local")
 
     rows = [json.loads(line) for line in args.split.open(encoding="utf-8")][: args.limit]
     tag = Path(args.adapter).name if args.adapter else args.model.split("/")[-1]
-    out = args.out or Path("outputs/predictions") / f"{tag}{'-fewshot' if args.few_shot else ''}.jsonl"
+    suffix = ("-fewshot" if args.few_shot else "") + ("-schema" if args.schema_prompt else "") \
+        + ("-constrained" if args.constrained else "")
+    out = args.out or Path("outputs/predictions") / f"{tag}{suffix}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
 
     done = {}
@@ -102,7 +134,9 @@ def main() -> None:
         raw = ""
         for attempt in range(args.retries + 1):
             try:
-                raw = generate(build_messages(row["report"], few_shot=args.few_shot))
+                raw = generate(build_messages(
+                    row["report"], few_shot=args.few_shot, schema_prompt=args.schema_prompt,
+                ))
                 break
             except Exception as error:  # keep going; evaluate counts empty output as invalid
                 print(f"\n{row['id']} (attempt {attempt + 1}): {type(error).__name__}: {error}")

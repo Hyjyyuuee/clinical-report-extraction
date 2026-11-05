@@ -2,7 +2,7 @@
 
 import json
 
-from .schema import FindingType
+from .schema import FindingType, Laterality, Status
 
 SYSTEM = (
     "You are a clinical information extraction system. Read a chest X-ray report and "
@@ -54,8 +54,29 @@ def format_report(findings: str, impression: str) -> str:
     return f"FINDINGS: {findings or 'N/A'}\nIMPRESSION: {impression or 'N/A'}"
 
 
-def build_messages(report: str, few_shot: bool = False) -> list[dict]:
-    messages = [{"role": "system", "content": SYSTEM}]
+# Opt-in addition for models that do not know the output format (e.g. small open models zero-shot).
+# The default prompt stays unchanged: DeepSeek runs and the QLoRA adapter were made with it.
+SCHEMA_INSTRUCTIONS = (
+    "\nOutput format. Return exactly one JSON object and nothing else:\n"
+    '{"findings": [{"finding": <finding>, "status": <status>, "laterality": <laterality>, '
+    '"location": <string or null>, "evidence": <string>}]}\n'
+    "Every finding object must have all five keys.\n"
+    f"- finding: exactly one of {', '.join(f.value for f in FindingType)}. Never invent a new "
+    "value; use \"other\" for an in-scope finding that is not in the list.\n"
+    f"- status: exactly one of {', '.join(s.value for s in Status)}.\n"
+    f"- laterality: one of {', '.join(l.value for l in Laterality)}, or null if no side is stated.\n"
+    "- location: free-text anatomical location, or null.\n"
+    "- evidence: a span copied verbatim from the report.\n"
+    "If the report mentions no finding, return {\"findings\": []}.\n"
+    "Minimal example. Report: \"No pleural effusion. Mild cardiomegaly.\" Output:\n"
+    '{"findings": [{"finding": "pleural_effusion", "status": "absent", "laterality": null, '
+    '"location": null, "evidence": "No pleural effusion"}, {"finding": "cardiomegaly", '
+    '"status": "present", "laterality": null, "location": null, "evidence": "Mild cardiomegaly"}]}'
+)
+
+
+def build_messages(report: str, few_shot: bool = False, schema_prompt: bool = False) -> list[dict]:
+    messages = [{"role": "system", "content": SYSTEM + (SCHEMA_INSTRUCTIONS if schema_prompt else "")}]
     if few_shot:
         for example_report, example_output in FEW_SHOT:
             messages.append({"role": "user", "content": example_report})
