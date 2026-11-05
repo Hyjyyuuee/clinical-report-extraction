@@ -89,11 +89,22 @@ Annotation rules (also in the system prompt, `src/cre/prompts.py`):
 
 ## Results
 
-To be filled in after the experiments.
+Gold test set: 300 reports, 1,088 scored findings (174 present / 861 absent / 53 uncertain). A finding matches on (finding, status, laterality). "Valid JSON" means the whole output parses and validates against the schema; a report whose output is invalid contributes no predictions.
 
 | Model | Setting | Valid JSON | F1 overall | F1 present | F1 absent | F1 uncertain |
 |---|---|---|---|---|---|---|
-| deepseek-chat | few-shot | | | | | |
-| Qwen2.5-3B | zero-shot | | | | | |
-| Qwen2.5-3B | QLoRA | | | | | |
-| Qwen2.5-7B | QLoRA | | | | | |
+| deepseek-chat | few-shot | 100.0% | 0.959* | 0.926* | 0.974* | 0.822* |
+| Qwen2.5-3B | zero-shot | 13.0% | 0.000 | 0.000 | 0.000 | 0.000 |
+| Qwen2.5-3B | few-shot | 20.0% | 0.212 | 0.147 | 0.232 | 0.073 |
+| Qwen2.5-3B | QLoRA | 99.7% | 0.947 | 0.884 | 0.972 | 0.743 |
+| Qwen2.5-7B | QLoRA | — | — | — | — | — |
+
+\* The gold labels started as DeepSeek pre-annotations and were then corrected, so DeepSeek's score is likely biased upward: wherever a draft label was left unchanged, DeepSeek agrees with the gold label by construction.
+
+Setup: QLoRA r=16 on all attention and MLP projections, 3 epochs over 2,658 silver training reports (one of the 2,659 DeepSeek outputs could not be parsed), 4-bit NF4. It took 2 h 23 min on an RTX 5060 Laptop GPU (8 GB). Dev loss was 0.0525 / 0.0475 / 0.0529 after epochs 1 / 2 / 3; the adapter in `outputs/qwen2.5-3b-qlora` is from epoch 3. Producing the silver labels took 2,659 `deepseek-chat` calls, under ¥10. **The 7B run was not done**: the README estimate for 7B is 16 GB+, and this machine has 8 GB (`configs/qwen2.5-7b-qlora.yaml` is ready for a larger GPU). Metrics are in `outputs/eval-*.json` and predictions in `outputs/predictions/`.
+
+### Error analysis
+
+- **Without fine-tuning, the 3B model mostly fails on the format, not on negation.** In zero-shot, 134/300 outputs use finding names outside the allowed list, 63 are malformed JSON, and 60 omit `status`. The zero-shot prompt names the allowed values but never shows the field schema, and one invalid finding invalidates the whole report. Few-shot fixes the missing fields, but 212/300 outputs still invent finding types (e.g. `indistinct_vascular_margination`). QLoRA brings valid output to 299/300; the remaining failure is an invented `pleural_thickening`.
+- **Negation is close to solved.** After QLoRA, absent F1 is 0.972, against 0.974 for DeepSeek. Only one gold-absent finding was predicted present. Most remaining absent errors are boundary cases rather than flipped polarity: a negated "airspace disease" (opacity absent) is missed (10–11 misses for each model), and extra or missed cardiomegaly-absent labels on borderline heart-size wording.
+- **Hedging is the main remaining gap.** Uncertain is the weakest class for every model (QLoRA 0.743 vs DeepSeek 0.822). The dominant error for both is collapsing a hedge into present (QLoRA 12, DeepSeek 9), e.g. "scarring or atelectasis", "findings suggestive of emphysema". The reverse also occurs, where a stated finding with a hedged cause is marked uncertain (QLoRA 5, DeepSeek 4), e.g. "opacities, atelectasis versus airspace disease" should be opacity present. The training labels are DeepSeek outputs, so the student inherits the teacher's hedging errors. With only 53 uncertain gold findings, these F1 differences are noisy.

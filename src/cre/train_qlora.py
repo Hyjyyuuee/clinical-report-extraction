@@ -32,7 +32,7 @@ def main() -> None:
             bnb_4bit_use_double_quant=True,
             bnb_4bit_compute_dtype=torch.bfloat16,
         ),
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         device_map="auto",
     )
 
@@ -58,7 +58,7 @@ def main() -> None:
             gradient_accumulation_steps=cfg["grad_accum"],
             learning_rate=cfg["learning_rate"],
             lr_scheduler_type="cosine",
-            warmup_ratio=0.05,
+            warmup_steps=0.05,  # a float < 1 is a ratio of total steps (warmup_ratio was removed)
             max_length=cfg["max_length"],
             gradient_checkpointing=True,
             bf16=True,

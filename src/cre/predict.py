@@ -9,6 +9,7 @@ Usage:
 import argparse
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -42,7 +43,7 @@ def local_generator(model_name: str, adapter: str | None, load_in_4bit: bool):
         load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16,
     ) if load_in_4bit else None
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, quantization_config=quantization, torch_dtype=torch.bfloat16, device_map="auto",
+        model_name, quantization_config=quantization, dtype=torch.bfloat16, device_map="auto",
     )
     if adapter:
         from peft import PeftModel
@@ -52,11 +53,11 @@ def local_generator(model_name: str, adapter: str | None, load_in_4bit: bool):
 
     def generate(messages: list[dict]) -> str:
         inputs = tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, return_tensors="pt",
+            messages, add_generation_prompt=True, return_tensors="pt", return_dict=True,
         ).to(model.device)
         with torch.no_grad():
-            output = model.generate(inputs, max_new_tokens=768, do_sample=False)
-        return tokenizer.decode(output[0, inputs.shape[1]:], skip_special_tokens=True)
+            output = model.generate(**inputs, max_new_tokens=768, do_sample=False)
+        return tokenizer.decode(output[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
 
     return generate
 
@@ -73,6 +74,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--retries", type=int, default=3)
+    parser.add_argument("--resume", action="store_true",
+                        help="keep non-empty outputs already in --out and only run the rest")
     args = parser.parse_args()
 
     if args.backend == "api":
@@ -85,19 +89,37 @@ def main() -> None:
     out = args.out or Path("outputs/predictions") / f"{tag}{'-fewshot' if args.few_shot else ''}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    done = {}
+    if args.resume and out.exists():
+        for line in out.open(encoding="utf-8"):
+            row = json.loads(line)
+            if row["raw"]:
+                done[row["id"]] = row
+        print(f"resume: {len(done)} rows already done")
+    todo = [row for row in rows if row["id"] not in done]
+
     def run(row: dict) -> dict:
-        try:
-            raw = generate(build_messages(row["report"], few_shot=args.few_shot))
-        except Exception as error:  # keep going; evaluate counts empty output as invalid
-            raw = ""
-            print(f"\n{row['id']}: {type(error).__name__}: {error}")
+        raw = ""
+        for attempt in range(args.retries + 1):
+            try:
+                raw = generate(build_messages(row["report"], few_shot=args.few_shot))
+                break
+            except Exception as error:  # keep going; evaluate counts empty output as invalid
+                print(f"\n{row['id']} (attempt {attempt + 1}): {type(error).__name__}: {error}")
+                if attempt < args.retries:
+                    time.sleep(5 * 2 ** attempt)
         return {"id": row["id"], "raw": raw}
 
     # API calls are I/O bound, so run them concurrently; a local GPU model runs one at a time.
+    # Kept rows are rewritten first and new results are flushed as they finish, so an
+    # interrupted run can be continued with --resume.
     workers = args.workers if args.backend == "api" else 1
     with ThreadPoolExecutor(workers) as pool, out.open("w", encoding="utf-8") as f:
-        for result in tqdm(pool.map(run, rows), total=len(rows), desc=tag):
+        for result in done.values():
             f.write(json.dumps(result, ensure_ascii=False) + "\n")
+        for result in tqdm(pool.map(run, todo), total=len(todo), desc=tag):
+            f.write(json.dumps(result, ensure_ascii=False) + "\n")
+            f.flush()
     print(f"wrote {out}")
 
 
